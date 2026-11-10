@@ -1,0 +1,75 @@
+# =============================================================
+#  Highway Heroes – Apache settings for the Zone.ee server
+#  (HTTP -> HTTPS is already handled by Zone, so it is NOT here)
+# =============================================================
+
+# Tell Apache that index.html is the start page of a folder
+DirectoryIndex index.html
+
+# Don't show a file listing if a folder has no index.html
+Options -Indexes
+
+# Friendly "page not found" page
+ErrorDocument 404 /404.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # 1) www.highwayheroes.eu  ->  highwayheroes.eu  (permanent redirect)
+  #    Keeps the rest of the address, e.g. www.highwayheroes.eu/en/ -> highwayheroes.eu/en/
+  RewriteCond %{HTTP_HOST} ^www\.highwayheroes\.eu$ [NC]
+  RewriteRule ^(.*)$ https://highwayheroes.eu/$1 [R=301,L]
+
+  # 2) /index.html and /en/index.html -> / and /en/  (one address per page is better for Google)
+  RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.html[\s?] [NC]
+  RewriteRule ^(.*/)?index\.html$ /$1 [R=301,L]
+
+  # 3) /en  ->  /en/
+  RewriteRule ^en$ /en/ [R=301,L]
+</IfModule>
+
+# Correct file types
+<IfModule mod_mime.c>
+  AddType image/svg+xml .svg
+  AddType image/webp .webp
+  AddType font/woff2 .woff2
+  AddType application/manifest+json .webmanifest
+  AddType text/plain .txt
+  AddCharset utf-8 .html .css .js .txt .xml .webmanifest .svg
+</IfModule>
+
+# Compress text files so pages load faster
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/javascript text/javascript application/json application/ld+json application/manifest+json image/svg+xml application/xml
+</IfModule>
+
+# Let browsers keep files for a while (faster repeat visits)
+# CSS/JS carry a ?v= number in the HTML; raise it after editing them.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 week"
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType text/plain "access plus 1 day"
+  ExpiresByType application/xml "access plus 1 day"
+</IfModule>
+
+# Basic security headers
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+</IfModule>
+
+# Hide this file and other hidden files
+<FilesMatch "^\.">
+  Require all denied
+</FilesMatch>
